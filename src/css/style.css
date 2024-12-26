@@ -1,0 +1,56 @@
+:root {
+  --color-text: #0f0f10; 
+  --color-bg: #e1e1e1; 
+  --color-primary: #0d59e7;
+  --color-hover: #b6b6b6;
+}
+
+html {
+  font-size: 10px;
+}
+
+body {
+  background-color: black;
+  color: white;
+  position: relative;
+}
+
+.canvas {
+  background-color: #152233;
+  touch-action: none;
+  position: absolute;
+}
+
+/* Controls Styling */ 
+.controls {
+  z-index: 1;
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+}
+
+.controls > .btn {
+  font-size: 1.5rem;
+  font-weight: 300;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+  letter-spacing: 1px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+.btn:hover,
+.btn:focus {
+  background-color: var(--color-hover);
+}
+
+.btn.btn-primary {
+  background-color: #0d59e7;
+  color: #e1e1e1;
+}
+
+.btn.btn-primary:hover,
+.btn.btn-primary:focus {
+  background-color: #1c50b2;
+}
