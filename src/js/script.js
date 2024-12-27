@@ -33,6 +33,20 @@ function main() {
     wireframe
   });
 
+  const imgBall2 = {
+    image: new Image(),
+    isLoaded: false
+  };
+  imgBall2.image.src = '../../assets/ball2.png';
+  imgBall2.image.onload = () => (imgBall2.isLoaded = true);
+
+  const imgBall4 = {
+    image: new Image(),
+    isLoaded: false
+  };
+  imgBall4.image.src = '../../assets/box4.jpg';
+  imgBall4.image.onload = () => (imgBall4.isLoaded = true);
+
   canvas.width = width * pixelDensity;
   canvas.height = height * pixelDensity;
   canvas.style.width = width + 'pixelDensity';
@@ -217,6 +231,48 @@ function main() {
     ctx.fillText('spatial grid coming soon...', 12, 12 * 5);
 
     for (const body of bodies) {
+      if (imgBall2.isLoaded && body.shape === 'Circle') {
+        const radius = body.radius * 2;
+        const dir = Vector2.subtract(body.p1, body.position);
+        const angle = Math.atan2(dir.y, dir.x);
+
+        ctx.save();
+        ctx.translate(body.position.x, body.position.y);
+        ctx.rotate(angle);
+        ctx.drawImage(
+          imgBall2.image,
+          -radius * 0.5,
+          -radius * 0.5,
+          radius,
+          radius
+        );
+        ctx.restore();
+
+        continue;
+      }
+
+      if (imgBall4.isLoaded && body.shape === 'Rectangle') {
+        const boxWidth = body.width;
+        const boxHeight = body.height;
+        const position = body.getCentroid();
+        const dir = Vector2.subtract(body.p1, position);
+        const angle = Math.atan2(dir.y, dir.x);
+
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        ctx.rotate(angle);
+        ctx.drawImage(
+          imgBall4.image,
+          -boxWidth * 0.5,
+          -boxHeight * 0.5,
+          boxWidth,
+          boxHeight
+        );
+        ctx.restore();
+
+        continue;
+      }
+
       body.render(ctx);
     }
   }

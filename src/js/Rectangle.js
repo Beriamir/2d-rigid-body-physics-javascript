@@ -8,6 +8,7 @@ export class Rectangle {
     this.width = width;
     this.height = height;
 
+    this.p1 = new Vector2(x + this.width / 2, y);
     this.vertices = [
       new Vector2(x - this.width / 2, y - this.height / 2),
       new Vector2(x + this.width / 2, y - this.height / 2),
@@ -67,7 +68,7 @@ export class Rectangle {
   }
 
   move(vector, scalar = 1) {
-    for (const point of this.vertices) {
+    for (const point of [this.p1, ...this.vertices]) {
       point.add(vector, scalar);
     }
   }
@@ -75,7 +76,7 @@ export class Rectangle {
   rotate(angle) {
     const center = this.getCentroid();
 
-    for (const point of this.vertices) {
+    for (const point of [this.p1, ...this.vertices]) {
       const translated = Vector2.subtract(center, point);
       const rotated = translated.rotate(angle);
 
