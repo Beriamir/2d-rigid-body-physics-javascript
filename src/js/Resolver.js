@@ -27,7 +27,7 @@ export function resolveCollision(bodyA, bodyB, normal, contactPoints) {
   const I1 = bodyA.inverseInertia;
   const I2 = bodyB.inverseInertia;
   
-  const dampFactor = 0.999;
+  const dampFactor = 0.9995;
   const torqueFactor = 0.4;
 
   for (let i = 0; i < contactPoints.length; i++) {

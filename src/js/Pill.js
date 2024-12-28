@@ -9,6 +9,7 @@ export class Pill {
     this.height = height;
     this.radius = width / 2;
 
+    this.anglePoint = new Vector2(position.x + this.radius, position.y);
     this.p1 = new Vector2(position.x, position.y - this.height / 2);
     this.p2 = new Vector2(position.x, position.y + this.height / 2);
     this.vertices = [
@@ -74,14 +75,16 @@ export class Pill {
     if (this.wireframe === 'false') {
       ctx.fillStyle = this.color;
       ctx.fill();
-    }
+    } else {
+      
     
     ctx.strokeStyle = 'white';
     ctx.stroke();
+    }
   }
 
   move(vector, scalar = 1) {
-    for (const point of [this.p1, this.p2, ...this.vertices]) {
+    for (const point of [this.anglePoint, this.p1, this.p2, ...this.vertices]) {
       point.add(vector, scalar);
     }
   }
@@ -89,7 +92,7 @@ export class Pill {
   rotate(angle) {
     const center = this.getCentroid();
 
-    for (const point of [this.p1, this.p2, ...this.vertices]) {
+    for (const point of [this.anglePoint, this.p1, this.p2, ...this.vertices]) {
       const translated = Vector2.subtract(center, point);
       const rotated = translated.rotate(angle);
 

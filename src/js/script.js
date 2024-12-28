@@ -14,7 +14,7 @@ function main() {
   const ctx = canvas.getContext('2d');
   const width = innerWidth;
   const height = innerHeight;
-  const pixelDensity = 2;
+  const pixelDensity = Math.round(devicePixelRatio);
 
   const subSteps = 3;
   const gravity = new Vector2(0, 9.81);
@@ -33,19 +33,26 @@ function main() {
     wireframe
   });
 
-  const imgBall2 = {
+  const imgBall = {
     image: new Image(),
     isLoaded: false
   };
-  imgBall2.image.src = '../../assets/ball2.png';
-  imgBall2.image.onload = () => (imgBall2.isLoaded = true);
+  imgBall.image.src = '../../assets/ball.png';
+  imgBall.image.onload = () => (imgBall.isLoaded = true);
 
-  const imgBall4 = {
+  const imgBox = {
     image: new Image(),
     isLoaded: false
   };
-  imgBall4.image.src = '../../assets/box4.jpg';
-  imgBall4.image.onload = () => (imgBall4.isLoaded = true);
+  imgBox.image.src = '../../assets/box.jpg';
+  imgBox.image.onload = () => (imgBox.isLoaded = true);
+
+  const imgPill = {
+    image: new Image(),
+    isLoaded: false
+  };
+  imgPill.image.src = '../../assets/pill.png';
+  imgPill.image.onload = () => (imgPill.isLoaded = true);
 
   canvas.width = width * pixelDensity;
   canvas.height = height * pixelDensity;
@@ -231,7 +238,7 @@ function main() {
     ctx.fillText('spatial grid coming soon...', 12, 12 * 5);
 
     for (const body of bodies) {
-      if (imgBall2.isLoaded && body.shape === 'Circle') {
+      if (imgBall.isLoaded && body.shape === 'Circle' && !body.isStatic) {
         const radius = body.radius * 2;
         const dir = Vector2.subtract(body.p1, body.position);
         const angle = Math.atan2(dir.y, dir.x);
@@ -240,7 +247,7 @@ function main() {
         ctx.translate(body.position.x, body.position.y);
         ctx.rotate(angle);
         ctx.drawImage(
-          imgBall2.image,
+          imgBall.image,
           -radius * 0.5,
           -radius * 0.5,
           radius,
@@ -251,7 +258,7 @@ function main() {
         continue;
       }
 
-      if (imgBall4.isLoaded && body.shape === 'Rectangle') {
+      if (imgBox.isLoaded && body.shape === 'Rectangle' && !body.isStatic) {
         const boxWidth = body.width;
         const boxHeight = body.height;
         const position = body.getCentroid();
@@ -262,11 +269,33 @@ function main() {
         ctx.translate(position.x, position.y);
         ctx.rotate(angle);
         ctx.drawImage(
-          imgBall4.image,
+          imgBox.image,
           -boxWidth * 0.5,
           -boxHeight * 0.5,
           boxWidth,
           boxHeight
+        );
+        ctx.restore();
+
+        continue;
+      }
+
+      if (imgPill.isLoaded && body.shape === 'Pill' && !body.isStatic) {
+        const pillWidth = body.width;
+        const pillHeight = body.height + body.radius * 2;
+        const position = body.getCentroid();
+        const dir = Vector2.subtract(body.anglePoint, body.getCentroid());
+        const angle = Math.atan2(dir.y, dir.x);
+
+        ctx.save();
+        ctx.translate(position.x, position.y);
+        ctx.rotate(angle);
+        ctx.drawImage(
+          imgPill.image,
+          -pillWidth * 0.5,
+          -pillHeight * 0.5,
+          pillWidth,
+          pillHeight
         );
         ctx.restore();
 

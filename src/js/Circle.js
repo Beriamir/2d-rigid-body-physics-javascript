@@ -53,9 +53,11 @@ export class Circle {
     if (this.wireframe === 'false') {
       ctx.fillStyle = this.color;
       ctx.fill();
-    }
+    } else {
+      
     ctx.strokeStyle = 'white';
     ctx.stroke();
+    }
   }
   
   move(vector, scalar = 1) {
