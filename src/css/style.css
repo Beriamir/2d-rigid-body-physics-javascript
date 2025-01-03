@@ -54,3 +54,13 @@ body {
 .btn.btn-primary:focus {
   background-color: #1c50b2;
 }
+
+.btn.btn-danger {
+  background-color: #f7333e;
+  color: #e1e1e1;
+}
+
+.btn.btn-danger:hover,
+.btn.btn-danger:focus {
+  background-color: #e2111d;
+}

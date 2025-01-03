@@ -4,7 +4,7 @@ export class Pill {
   constructor(position, width, height, option = {}) {
     this.shape = 'Pill';
     this.isStatic = option.isStatic || false;
-  
+
     this.width = width;
     this.height = height;
     this.radius = width / 2;
@@ -39,7 +39,7 @@ export class Pill {
       dynamic: 0.6
     };
     this.wireframe = option.wireframe || 'true';
-    
+
     if (this.isStatic) {
       this.inverseMass = 0;
       this.inverseInertia = 0;
@@ -48,7 +48,7 @@ export class Pill {
       this.restitution = 1;
       this.color = 'gray';
     }
-    
+
     this.aabb = null;
   }
 
@@ -68,18 +68,15 @@ export class Pill {
     ctx.arc(this.p2.x, this.p2.y, this.radius, startAngleP2, endAngleP2);
     ctx.closePath();
 
-    // Middle Line
-    // ctx.moveTo(this.p1.x, this.p1.y);
-    // ctx.lineTo(this.p2.x, this.p2.y);
-
     if (this.wireframe === 'false') {
       ctx.fillStyle = this.color;
       ctx.fill();
     } else {
-      
-    
-    ctx.strokeStyle = 'white';
-    ctx.stroke();
+      // Middle Line
+      ctx.moveTo(this.p1.x, this.p1.y);
+      ctx.lineTo(this.p2.x, this.p2.y);
+      ctx.strokeStyle = '#ffffffa5';
+      ctx.stroke();
     }
   }
 

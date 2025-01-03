@@ -64,7 +64,7 @@ export class Rectangle {
       ctx.fill();
     } else {
       
-    ctx.strokeStyle = 'white';
+    ctx.strokeStyle = '#ffffffa5';
     ctx.stroke();
     }
   }

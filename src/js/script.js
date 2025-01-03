@@ -16,7 +16,7 @@ function main() {
   const height = innerHeight;
   const pixelDensity = Math.round(devicePixelRatio);
 
-  const subSteps = 3;
+  const subSteps = 4;
   const gravity = new Vector2(0, 9.81);
   let isSimulating = false;
   let simulationId = null;
@@ -94,58 +94,6 @@ function main() {
     initialize();
   }
 
-  function generatePills(amount) {
-    for (let i = 0; i < amount; i++) {
-      const pillWidth = Math.random() * (maxSize - minSize) + minSize;
-      let pillHeight = Math.random() * (maxSize - minSize) + minSize;
-      const position = new Vector2(
-        Math.random() * (width - pillWidth * 2) + pillWidth,
-        Math.random() * (height - pillHeight * 2) + pillHeight
-      );
-      const option = {
-        restitution,
-        wireframe
-      };
-
-      bodies.push(new Pill(position, pillWidth, pillHeight, option));
-    }
-  }
-
-  function generateRectangles(amount) {
-    for (let i = 0; i < amount; i++) {
-      const rectWidth = Math.random() * (maxSize - minSize) + minSize;
-      const rectHeight = Math.random() * (maxSize - minSize) + minSize;
-      const position = new Vector2(
-        Math.random() * (width - rectWidth * 2) + rectWidth,
-        Math.random() * (height - rectHeight * 2) + rectHeight
-      );
-      const option = {
-        restitution,
-        wireframe
-      };
-
-      bodies.push(
-        new Rectangle(position.x, position.y, rectWidth, rectHeight, option)
-      );
-    }
-  }
-
-  function generateCircles(amount) {
-    for (let i = 0; i < amount; i++) {
-      const radius = (Math.random() * (maxSize - minSize) + minSize) * 0.5;
-      const position = new Vector2(
-        Math.random() * (width - radius * 2) + radius,
-        Math.random() * (height - radius * 2) + radius
-      );
-      const option = {
-        restitution,
-        wireframe
-      };
-
-      bodies.push(new Circle(position.x, position.y, radius, option));
-    }
-  }
-
   canvas.addEventListener(
     'pointerdown',
     throttle(event => {
@@ -198,16 +146,15 @@ function main() {
   );
 
   playBtn.addEventListener('click', playSimulation);
+  
   pauseBtn.addEventListener('click', pauseSimulation);
+  
   restartBtn.addEventListener('click', restartSimulation);
 
   function initialize() {
     bodies.length = 0;
     bodies.push(groundRect);
 
-    generatePills(0);
-    generateRectangles(0);
-    generateCircles(0);
     renderSimulation(bodies, deltaTime);
   }
 
@@ -215,6 +162,7 @@ function main() {
 
   function renderSimulation(bodies, deltaTime) {
     const fps = Math.round(1000 / deltaTime);
+    const fontSize = 12;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.font = 'bold 50px Arial';
@@ -223,21 +171,22 @@ function main() {
     ctx.fillStyle = '#686868';
 
     isSimulating
-      ? ctx.fillText(`Playing`, width / 2, height / 2)
-      : ctx.fillText(`Paused`, width / 2, height / 2);
+      ? ctx.fillText(`Playing`, width / 2, height / 4)
+      : ctx.fillText(`Paused`, width / 2, height / 4);
 
     ctx.font = 'normal 12px Arial';
     ctx.textAlign = 'start';
     ctx.textBaseline = 'top';
     ctx.fillStyle = 'white';
 
-    ctx.fillText(`${fps === Infinity ? 0 : fps} fps`, 12, 12);
-    ctx.fillText(`${bodies.length} bodies`, 12, 12 * 2);
-    ctx.fillText(`${subSteps} substeps`, 12, 12 * 3);
-    ctx.fillText('naive version (slow)', 12, 12 * 4);
-    ctx.fillText('spatial grid coming soon...', 12, 12 * 5);
+    ctx.fillText(`${fps === Infinity ? 0 : fps} fps`, fontSize, fontSize);
+    ctx.fillText(`${bodies.length} bodies`, fontSize, fontSize * 2);
+    ctx.fillText(`${subSteps} substeps`, fontSize, fontSize * 3);
+    ctx.fillText('naive version (slow)', fontSize, fontSize * 4);
+    ctx.fillText('spatial grid coming soon...', fontSize, fontSize * 5);
 
     for (const body of bodies) {
+      
       if (imgBall.isLoaded && body.shape === 'Circle' && !body.isStatic) {
         const radius = body.radius * 2;
         const dir = Vector2.subtract(body.p1, body.position);
@@ -301,6 +250,7 @@ function main() {
 
         continue;
       }
+      
 
       body.render(ctx);
     }
@@ -314,7 +264,7 @@ function main() {
     renderSimulation(bodies, deltaTime);
 
     // Simulate
-    for (let s = 0; s <= subSteps; s++) {
+    for (let s = 1; s <= subSteps; s++) {
       for (let i = 0; i < bodies.length; i++) {
         const bodyA = bodies[i];
         const dt = deltaTime / subSteps;
