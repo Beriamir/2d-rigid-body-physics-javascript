@@ -11,6 +11,10 @@ function main() {
   const playBtn = document.getElementById('play-btn');
   const pauseBtn = document.getElementById('pause-btn');
   const restartBtn = document.getElementById('restart-btn');
+  const wireframeBtn = document.getElementById('wireframe-btn');
+  const contactsBtn = document.getElementById('contacts-btn');
+  const gridBtn = document.getElementById('grid-btn');
+  const aabbBtn = document.getElementById('aabb-btn');
 
   const ctx = canvas.getContext('2d');
   const width = 400;
@@ -27,10 +31,10 @@ function main() {
   const restitution = 0.8;
   const maxSize = 40;
   const minSize = 30;
-  const wireframe = false;
-  const isRenderContactPoints = false;
-  const isRenderAABBs = false;
-  const isRenderGrid = false;
+  let wireframe = true;
+  let isRenderContactPoints = true;
+  let isRenderAABBs = true;
+  let isRenderGrid = true;
   const contactPointColor = '#f9ab1574';
   const aabbColor = '#f9ab156d';
   const groundRect = new Rectangle(width / 2, height * 0.9, 300, 200, {
@@ -159,6 +163,28 @@ function main() {
   pauseBtn.addEventListener('click', pauseSimulation);
 
   restartBtn.addEventListener('click', restartSimulation);
+
+  wireframeBtn.addEventListener('click', () => {
+    bodies.forEach(body => {
+      body.wireframe = !body.wireframe;
+    });
+    wireframe = !wireframe;
+  });
+
+  contactsBtn.addEventListener(
+    'click',
+    () => (isRenderContactPoints = !isRenderContactPoints)
+  );
+  
+  gridBtn.addEventListener(
+    'click',
+    () => (isRenderGrid = !isRenderGrid)
+  );
+  
+  aabbBtn.addEventListener(
+    'click',
+    () => (isRenderAABBs = !isRenderAABBs)
+  );
 
   function initialize() {
     bodies.length = 0;
