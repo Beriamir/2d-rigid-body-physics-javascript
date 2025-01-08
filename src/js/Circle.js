@@ -4,7 +4,7 @@ export class Circle {
   constructor(x, y, radius, option = {}) {
     this.shape = 'Circle';
     this.isStatic = option.isStatic || false;
-    
+
     this.position = new Vector2(x, y);
     this.p1 = new Vector2(x - radius, y);
     this.radius = radius;
@@ -28,9 +28,14 @@ export class Circle {
       static: 0.61,
       dynamic: 0.47
     };
-    
-    this.wireframe = option.wireframe || 'true';
-    
+
+    this.wireframe =
+      option.wireframe === undefined
+        ? true
+        : typeof option.wireframe !== 'boolean'
+        ? true
+        : option.wireframe;
+
     if (this.isStatic) {
       this.inverseMass = 0;
       this.inverseInertia = 0;
@@ -38,8 +43,20 @@ export class Circle {
       this.angularVelocity = 0;
       this.restitution = 1;
     }
-    
+
     this.aabb = null;
+  }
+
+  getAABB() {
+    const min = [this.position.x - this.radius, this.position.y - this.radius];
+    const max = [this.position.x + this.radius, this.position.y + this.radius];
+    
+    return {
+      min,
+      max,
+      width: max[0] - min[0],
+      height: max[1] - min[1]
+    };
   }
 
   render(ctx) {
@@ -50,16 +67,15 @@ export class Circle {
     ctx.moveTo(this.position.x, this.position.y);
     ctx.lineTo(this.p1.x, this.p1.y);
 
-    if (this.wireframe === 'false') {
+    if (!this.wireframe) {
       ctx.fillStyle = this.color;
       ctx.fill();
     } else {
-      
-    ctx.strokeStyle = '#ffffffa5';
-    ctx.stroke();
+      ctx.strokeStyle = '#ffffffa5';
+      ctx.stroke();
     }
   }
-  
+
   move(vector, scalar = 1) {
     for (const point of [this.position, this.p1]) {
       point.add(vector, scalar);

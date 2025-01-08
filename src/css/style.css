@@ -19,6 +19,7 @@ body {
   background-color: #152233;
   touch-action: none;
   position: absolute;
+  max-width: none;
 }
 
 /* Controls Styling */ 

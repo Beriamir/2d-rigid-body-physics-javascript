@@ -4,6 +4,7 @@ import { Circle } from './Circle.js';
 import { Rectangle } from './Rectangle.js';
 import * as Collision from './Collision.js';
 import * as Resolver from './Resolver.js';
+import { SpatialHashGrid } from './SpatialHashGrid.js';
 
 function main() {
   const canvas = document.getElementById('canvas');
@@ -12,11 +13,11 @@ function main() {
   const restartBtn = document.getElementById('restart-btn');
 
   const ctx = canvas.getContext('2d');
-  const width = innerWidth;
-  const height = innerHeight;
+  const width = 400;
+  const height = 640;
   const pixelDensity = Math.round(devicePixelRatio);
 
-  const subSteps = 4;
+  const subSteps = 8;
   const gravity = new Vector2(0, 9.81);
   let isSimulating = false;
   let simulationId = null;
@@ -24,15 +25,22 @@ function main() {
 
   const bodies = [];
   const restitution = 0.8;
-  const minSize = 40;
-  const maxSize = 50;
-  const wireframe = 'false';
-  const renderContactPoints = false;
+  const maxSize = 40;
+  const minSize = 30;
+  const wireframe = false;
+  const isRenderContactPoints = false;
+  const isRenderAABBs = false;
+  const isRenderGrid = false;
+  const contactPointColor = '#f9ab1574';
+  const aabbColor = '#f9ab156d';
   const groundRect = new Rectangle(width / 2, height * 0.9, 300, 200, {
     isStatic: true,
     wireframe
   });
 
+  const spatialGrid = new SpatialHashGrid(0, 0, width, height, maxSize);
+
+  /* 
   const imgBall = {
     image: new Image(),
     isLoaded: false
@@ -53,15 +61,13 @@ function main() {
   };
   imgPill.image.src = '../../assets/pill.png';
   imgPill.image.onload = () => (imgPill.isLoaded = true);
+  */
 
   canvas.width = width * pixelDensity;
   canvas.height = height * pixelDensity;
-  canvas.style.width = width + 'pixelDensity';
-  canvas.style.height = height + 'pixelDensity';
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
   ctx.scale(pixelDensity, pixelDensity);
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'start';
-  ctx.textBaseline = 'top';
 
   function throttle(callback, delay) {
     let lastTime = performance.now();
@@ -116,6 +122,7 @@ function main() {
           option
         );
         bodies.push(rect);
+        spatialGrid.addData(rect);
       }
     }, 1000 / 30)
   );
@@ -137,23 +144,28 @@ function main() {
         if (Math.random() - 0.5 < 0) {
           const pill = new Pill(pointer, maxSize - radius, pillHeight, option);
           bodies.push(pill);
+          spatialGrid.addData(pill);
         } else {
           const circle = new Circle(pointer.x, pointer.y, radius, option);
           bodies.push(circle);
+          spatialGrid.addData(circle);
         }
       }
     }, 1000 / 30)
   );
 
   playBtn.addEventListener('click', playSimulation);
-  
+
   pauseBtn.addEventListener('click', pauseSimulation);
-  
+
   restartBtn.addEventListener('click', restartSimulation);
 
   function initialize() {
     bodies.length = 0;
+    spatialGrid.grid.forEach(cell => (cell.length = 0));
+
     bodies.push(groundRect);
+    spatialGrid.addData(groundRect);
 
     renderSimulation(bodies, deltaTime);
   }
@@ -165,6 +177,7 @@ function main() {
     const fontSize = 12;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     ctx.font = 'bold 50px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -174,7 +187,9 @@ function main() {
       ? ctx.fillText(`Playing`, width / 2, height / 4)
       : ctx.fillText(`Paused`, width / 2, height / 4);
 
-    ctx.font = 'normal 12px Arial';
+    isRenderGrid && spatialGrid.render(ctx);
+
+    ctx.font = `normal ${fontSize}px Arial`;
     ctx.textAlign = 'start';
     ctx.textBaseline = 'top';
     ctx.fillStyle = 'white';
@@ -182,12 +197,26 @@ function main() {
     ctx.fillText(`${fps === Infinity ? 0 : fps} fps`, fontSize, fontSize);
     ctx.fillText(`${bodies.length} bodies`, fontSize, fontSize * 2);
     ctx.fillText(`${subSteps} substeps`, fontSize, fontSize * 3);
-    ctx.fillText('naive version (slow)', fontSize, fontSize * 4);
-    ctx.fillText('spatial grid coming soon...', fontSize, fontSize * 5);
+    isRenderGrid &&
+      ctx.fillText(`${spatialGrid.scale} grid-scale`, fontSize, fontSize * 4);
+    if (isRenderGrid) {
+      ctx.fillText(
+        `${spatialGrid.grid.length} grid-cells`,
+        fontSize,
+        fontSize * 5
+      );
+    }
 
     for (const body of bodies) {
-      
-      if (imgBall.isLoaded && body.shape === 'Circle' && !body.isStatic) {
+      if (isRenderAABBs) {
+        const aabb = body.getAABB();
+
+        ctx.strokeStyle = aabbColor;
+        ctx.strokeRect(aabb.min[0], aabb.min[1], aabb.width, aabb.height);
+      }
+      body.render(ctx);
+
+      /* if (imgBall.isLoaded && body.shape === 'Circle' && !body.isStatic) {
         const radius = body.radius * 2;
         const dir = Vector2.subtract(body.p1, body.position);
         const angle = Math.atan2(dir.y, dir.x);
@@ -250,9 +279,7 @@ function main() {
 
         continue;
       }
-      
-
-      body.render(ctx);
+      */
     }
   }
 
@@ -265,21 +292,21 @@ function main() {
 
     // Simulate
     for (let s = 1; s <= subSteps; s++) {
+      const dt = deltaTime / subSteps;
       for (let i = 0; i < bodies.length; i++) {
         const bodyA = bodies[i];
-        const dt = deltaTime / subSteps;
         const acceleration = Vector2.scale(gravity, bodyA.inverseMass);
 
         bodyA.velocity.add(acceleration, dt);
-
         bodyA.move(bodyA.velocity, dt);
         bodyA.rotate(bodyA.angularVelocity * dt);
 
-        // Perform Collision (Naive Version)
-        for (let j = 1; j < bodies.length; j++) {
-          const bodyB = bodies[j];
+        if (s === subSteps) spatialGrid.updateData(bodyA);
 
-          if (bodyA === bodyB) continue;
+        const nearby = spatialGrid.queryNearby(bodyA);
+
+        for (let j = 0; j < nearby.length; j++) {
+          const bodyB = nearby[j];
 
           if (bodyA.shape === 'Pill' && bodyB.shape === 'Pill') {
             const { collision, normal, overlapDepth } =
@@ -290,9 +317,9 @@ function main() {
                 bodyB,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -309,9 +336,9 @@ function main() {
                 bodyB,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -327,9 +354,9 @@ function main() {
                 bodyA,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -346,9 +373,9 @@ function main() {
                 bodyA,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -365,9 +392,9 @@ function main() {
                 bodyB,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -384,9 +411,9 @@ function main() {
                 bodyB.vertices,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -403,9 +430,9 @@ function main() {
                 bodyA.vertices,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -421,9 +448,9 @@ function main() {
                 bodyA,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -439,9 +466,9 @@ function main() {
                 bodyB,
                 normal
               );
-              if (s === subSteps && renderContactPoints) {
+              if (s === subSteps && isRenderContactPoints) {
                 for (const point of contactPoints) {
-                  ctx.fillStyle = 'red';
+                  ctx.fillStyle = contactPointColor;
                   ctx.fillRect(point.x - 2, point.y - 2, 4, 4);
                 }
               }
@@ -456,14 +483,20 @@ function main() {
     // Remove Offscreen Bodies
     for (let i = 0; i < bodies.length; i++) {
       const body = bodies[i];
-      const position = body.position || body.getCentroid();
+      const aabb = body.getAABB();
       if (
-        position.x < -maxSize ||
-        position.x > width + maxSize ||
-        position.y < -maxSize ||
-        position.y > height + maxSize
+        aabb.min[0] < -aabb.width ||
+        aabb.max[0] > width + aabb.width ||
+        aabb.min[1] < -aabb.height ||
+        aabb.max[1] > height + aabb.height
       ) {
-        bodies.splice(i, 1);
+        const temp = body;
+        const endIndex = bodies.length - 1;
+
+        bodies[i] = bodies[endIndex];
+        bodies[endIndex] = temp;
+        bodies.pop();
+        spatialGrid.removeData(body);
       }
     }
 

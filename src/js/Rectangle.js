@@ -35,8 +35,13 @@ export class Rectangle {
       static: 0.8,
       dynamic: 0.6
     };
-    this.wireframe = option.wireframe || 'true';
-  
+    this.wireframe =
+      option.wireframe === undefined
+        ? true
+        : typeof option.wireframe !== 'boolean'
+        ? true
+        : option.wireframe;
+
     if (this.isStatic) {
       this.inverseMass = 0;
       this.inverseInertia = 0;
@@ -45,8 +50,27 @@ export class Rectangle {
       this.restitution = 1;
       this.color = 'gray';
     }
+  }
+  
+  getAABB() {
+    let min = [Infinity, Infinity];
+    let max = [-Infinity, -Infinity];
 
-    this.aabb = null;
+    for (let i = 0; i < this.vertices.length; i++) {
+      const p1 = this.vertices[i];
+
+      if (p1.x < min[0]) min[0] = p1.x;
+      if (p1.y < min[1]) min[1] = p1.y;
+      if (p1.x > max[0]) max[0] = p1.x;
+      if (p1.y > max[1]) max[1] = p1.y;
+    }
+
+    return {
+      min,
+      max,
+      width: max[0] - min[0],
+      height: max[1] - min[1]
+    };
   }
 
   render(ctx) {
@@ -59,7 +83,7 @@ export class Rectangle {
     }
     ctx.closePath();
 
-    if (this.wireframe === 'false') {
+    if (!this.wireframe) {
       ctx.fillStyle = this.color;
       ctx.fill();
     } else {

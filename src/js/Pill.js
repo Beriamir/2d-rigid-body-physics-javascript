@@ -38,7 +38,12 @@ export class Pill {
       static: 0.8,
       dynamic: 0.6
     };
-    this.wireframe = option.wireframe || 'true';
+    this.wireframe =
+      option.wireframe === undefined
+        ? true
+        : typeof option.wireframe !== 'boolean'
+        ? true
+        : option.wireframe;
 
     if (this.isStatic) {
       this.inverseMass = 0;
@@ -48,8 +53,27 @@ export class Pill {
       this.restitution = 1;
       this.color = 'gray';
     }
+  }
 
-    this.aabb = null;
+  getAABB() {
+    let min = [Infinity, Infinity];
+    let max = [-Infinity, -Infinity];
+
+    for (let i = 0; i < this.vertices.length; i++) {
+      const p1 = this.vertices[i];
+
+      if (p1.x - this.radius < min[0]) min[0] = p1.x - this.radius;
+      if (p1.y - this.radius < min[1]) min[1] = p1.y - this.radius;
+      if (p1.x + this.radius > max[0]) max[0] = p1.x + this.radius;
+      if (p1.y + this.radius > max[1]) max[1] = p1.y + this.radius;
+    }
+
+    return {
+      min,
+      max,
+      width: max[0] - min[0],
+      height: max[1] - min[1]
+    };
   }
 
   render(ctx) {
@@ -68,7 +92,7 @@ export class Pill {
     ctx.arc(this.p2.x, this.p2.y, this.radius, startAngleP2, endAngleP2);
     ctx.closePath();
 
-    if (this.wireframe === 'false') {
+    if (!this.wireframe) {
       ctx.fillStyle = this.color;
       ctx.fill();
     } else {
